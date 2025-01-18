@@ -1,6 +1,6 @@
 import { Deck, HandleDeckChange, HandleDeckPrintingChange } from "../types";
 import { Drawer, DrawerClose, DrawerContent, DrawerTrigger } from "@/components/ui/drawer";
-import { Trash2, X } from "lucide-react";
+import {  X } from "lucide-react";
 import DeckOverview from "./deck-overview";
 import DeckPdfGenerator from "./deck-pdf-generator";
 
