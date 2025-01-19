@@ -11,6 +11,7 @@ import {
 	DialogTitle,
 	DialogTrigger,
 } from "@/components/ui/dialog";
+import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
 import { Card, Deck } from "@/types";
 import { Import } from "lucide-react";
 
@@ -114,9 +115,7 @@ interface DeckImportContentProps {
 
 const DeckImportContent = ({ setDeck, onClose }: DeckImportContentProps) => {
 	const [text, setText] = useState("");
-	const [importCards, setImportCards] = useState<
-		{ quantity: number; name: string; set?: string }[]
-	>([]);
+	const [finished, setFinished] = useState(false);
 
 	const {
 		refetch: importDeck,
@@ -124,18 +123,17 @@ const DeckImportContent = ({ setDeck, onClose }: DeckImportContentProps) => {
 		isFetching,
 	} = useQuery({
 		queryKey: ["importDeck"],
-		queryFn: () => fetchCards(importCards),
+		queryFn: () => fetchCards(parseDeckList(text)),
 		enabled: false,
 	});
 
 	const handleImport = async () => {
-		console.log(parseDeckList(text));
-		setImportCards(parseDeckList(text));
 		const { data } = await importDeck();
 
 		if (data && data.results.length > 0) {
 			const newDeck = transformCardsToDeck(data.results);
 			setDeck(newDeck);
+			setFinished(true);
 
 			if (data.errors.length === 0) {
 				onClose();
@@ -156,19 +154,34 @@ const DeckImportContent = ({ setDeck, onClose }: DeckImportContentProps) => {
 					placeholder='Paste your deck list here...'
 					className='min-h-[300px] font-mono'
 				/>
-				{data?.errors.length ? (
-					<div className='text-destructive'>
-						<p>Cards not found:</p>
-						<ul className='list-disc pl-4'>
-							{data.errors.map((card) => (
-								<li key={card}>{card}</li>
-							))}
-						</ul>
+				{data && (
+					<div className='space-y-2'>
+						<Alert variant='default' className='bg-lime-300'>
+							<AlertTitle className='text-md text-lime-950 font-medium'>{`Success! ${data.results.length} cards imported successfully`}</AlertTitle>
+						</Alert>
+						{data.errors.length ? (
+							<Alert variant='default' className='bg-indigo-950'>
+								<AlertTitle className='text-md text-indigo-300 font-medium'>
+									{`Import Errors [${data.errors.length}]`}
+								</AlertTitle>
+								<AlertDescription>
+									<p className='font-light'>The following cards could not be found:</p>
+									<p className='list-disc ml-4 mt-2 font-light'>{data.errors.join(" - ")}</p>
+								</AlertDescription>
+							</Alert>
+						) : null}
 					</div>
-				) : null}
-				<Button onClick={handleImport} disabled={!text.trim() || isFetching} className='mx-auto'>
-					{isFetching ? "Importing..." : "Import"}
-				</Button>
+				)}
+				<div className='flex place-items-center justify-start gap-x-4'>
+					<Button onClick={handleImport} disabled={!text.trim() || isFetching}>
+						{isFetching ? "Importing..." : "Import"}
+					</Button>
+					{finished && (
+						<Button onClick={onClose} variant='outline' className='border-white'>
+							Close
+						</Button>
+					)}
+				</div>
 			</div>
 		</DialogContent>
 	);

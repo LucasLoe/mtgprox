@@ -13,17 +13,16 @@ const A4_HEIGHT_PT = 841.89;
 const CARD_WIDTH_PT = 178.58;
 const CARD_HEIGHT_PT = 249.45;
 
-// 1mm spacing in points
-const SPACING_PT = 2.83;
+// 0.5mm spacing in points
+const SPACING_PT = 1.415;
+
+// slight padding for respecting printer margins
+const PADDING_PT = 26;
 
 // Calculate how many cards fit per row and column with spacing
 const CARDS_PER_ROW = Math.floor((A4_WIDTH_PT + SPACING_PT) / (CARD_WIDTH_PT + SPACING_PT));
 const CARDS_PER_COLUMN = Math.floor((A4_HEIGHT_PT + SPACING_PT) / (CARD_HEIGHT_PT + SPACING_PT));
 const CARDS_PER_PAGE = CARDS_PER_ROW * CARDS_PER_COLUMN;
-
-// a bit of margin for printing
-const PADDING_TOP = 20;
-const PADDING_LEFT = 20;
 
 const DeckPdfGenerator = ({ deck }: { deck: Deck }) => {
 	const [open, setOpen] = useState(false);
@@ -33,7 +32,6 @@ const DeckPdfGenerator = ({ deck }: { deck: Deck }) => {
 		Array(entry.quantity).fill({ ...entry })
 	);
 
-	// Split cards into pages
 	const pages = Array.from({ length: Math.ceil(cards.length / CARDS_PER_PAGE) }, (_, i) =>
 		cards.slice(i * CARDS_PER_PAGE, (i + 1) * CARDS_PER_PAGE)
 	);
@@ -47,10 +45,8 @@ const DeckPdfGenerator = ({ deck }: { deck: Deck }) => {
 					style={{
 						flexDirection: "row",
 						flexWrap: "wrap",
-						padding: SPACING_PT,
+						padding: PADDING_PT,
 						gap: SPACING_PT,
-						paddingTop: PADDING_TOP,
-						paddingLeft: PADDING_LEFT,
 					}}
 				>
 					{pageCards.map((card, cardIndex) => (
@@ -94,7 +90,7 @@ const DeckPdfGenerator = ({ deck }: { deck: Deck }) => {
 			<DialogTrigger asChild>
 				<Button variant='outline' className='flex gap-2'>
 					<Printer className='h-4 w-4' />
-					Print A4
+					Print Proxies
 				</Button>
 			</DialogTrigger>
 			<DialogContent className='max-w-4xl h-[80vh]'>
