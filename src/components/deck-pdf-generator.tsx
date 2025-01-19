@@ -1,33 +1,33 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Document, Page, View, Image, PDFViewer, pdf } from "@react-pdf/renderer";
 import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
 import { Printer } from "lucide-react";
 import { Deck } from "@/types";
 
-// A4 dimensions in mm converted to points (1 pt = 0.3528 mm)
 const A4_WIDTH_PT = 595.28;
 const A4_HEIGHT_PT = 841.89;
-
-// Standard Magic card dimensions (63mm × 88mm) in points
 const CARD_WIDTH_PT = 178.58;
 const CARD_HEIGHT_PT = 249.45;
-
-// 0.5mm spacing in points
 const SPACING_PT = 1.415;
-
-// slight padding for respecting printer margins
 const PADDING_PT = 26;
 
-// Calculate how many cards fit per row and column with spacing
 const CARDS_PER_ROW = Math.floor((A4_WIDTH_PT + SPACING_PT) / (CARD_WIDTH_PT + SPACING_PT));
 const CARDS_PER_COLUMN = Math.floor((A4_HEIGHT_PT + SPACING_PT) / (CARD_HEIGHT_PT + SPACING_PT));
 const CARDS_PER_PAGE = CARDS_PER_ROW * CARDS_PER_COLUMN;
 
 const DeckPdfGenerator = ({ deck }: { deck: Deck }) => {
 	const [open, setOpen] = useState(false);
+	const [isMobile, setIsMobile] = useState(false);
 
-	// Flatten deck entries into array of cards respecting quantities
+	useEffect(() => {
+		// we don't use css classes, because we don't want to render it at all on mobile
+		const checkMobile = () => setIsMobile(window.innerWidth <= 768);
+		checkMobile();
+		window.addEventListener("resize", checkMobile);
+		return () => window.removeEventListener("resize", checkMobile);
+	}, []);
+
 	const cards = Object.values(deck.entries).flatMap((entry) =>
 		Array(entry.quantity).fill({ ...entry })
 	);
@@ -85,6 +85,15 @@ const DeckPdfGenerator = ({ deck }: { deck: Deck }) => {
 		setOpen(false);
 	};
 
+	if (isMobile) {
+		return (
+			<Button onClick={handleDownload} className='flex gap-2'>
+				<Printer className='h-4 w-4' />
+				Download PDF
+			</Button>
+		);
+	}
+
 	return (
 		<Dialog open={open} onOpenChange={setOpen}>
 			<DialogTrigger asChild>
@@ -95,7 +104,7 @@ const DeckPdfGenerator = ({ deck }: { deck: Deck }) => {
 			</DialogTrigger>
 			<DialogContent className='max-w-4xl h-[80vh]'>
 				<div className='flex flex-col h-full gap-4'>
-					<PDFViewer style={{ flex: 1, width: "100%" }}>
+					<PDFViewer className='flex-1 w-full'>
 						<PdfDocument />
 					</PDFViewer>
 					<div className='flex justify-end gap-2'>

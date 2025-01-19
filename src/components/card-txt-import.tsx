@@ -19,13 +19,10 @@ const fetchCards = async (cards: { quantity: number; name: string; set?: string 
 	const results: { card: Card; quantity: number }[] = [];
 	const errors: string[] = [];
 
-	console.log("query cards", cards);
-
 	for (const { name, quantity, set } of cards) {
 		try {
 			await new Promise((resolve) => setTimeout(resolve, 100)); // scryfall api has a rate limit
 
-			// Modify URL to include set if available
 			const url = set
 				? `https://api.scryfall.com/cards/named?exact=${name}&set=${set.toLowerCase()}&format=json`
 				: `https://api.scryfall.com/cards/named?exact=${name}&format=json`;
