@@ -40,6 +40,7 @@ const DeckPdfGenerator = ({ deck }: { deck: Deck }) => {
 					try {
 						await sleep(100);
 						const img = new window.Image();
+						img.crossOrigin = "anonymous";
 						const cacheBusterUrl = `${entry.imageUrl}?r=${Math.random()}`;
 						img.src = cacheBusterUrl;
 
