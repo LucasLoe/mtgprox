@@ -22,7 +22,8 @@ const DeckPdfGenerator = ({ deck }: { deck: Deck }) => {
 	const [open, setOpen] = useState(false);
 	const [isMobile, setIsMobile] = useState(false);
 	const [cardImages, setCardImages] = useState<{ [key: string]: string }>({});
-	const [isLoading, setIsLoading] = useState(true);
+	const [isLoading, setIsLoading] = useState(false);
+	const [progress, setProgress] = useState(0);
 
 	useEffect(() => {
 		const checkMobile = () => setIsMobile(window.innerWidth <= 768);
@@ -31,37 +32,40 @@ const DeckPdfGenerator = ({ deck }: { deck: Deck }) => {
 		return () => window.removeEventListener("resize", checkMobile);
 	}, []);
 
-	useEffect(() => {
-		const loadImages = async () => {
-			const images: { [key: string]: string } = {};
+	const loadImages = async () => {
+		const images: { [key: string]: string } = {};
+		const entries = Object.values(deck.entries);
 
-			for (const entry of Object.values(deck.entries)) {
-				if (entry.imageUrl) {
-					try {
-						await sleep(100);
-						const img = new window.Image();
-						img.crossOrigin = "anonymous";
-						const cacheBusterUrl = `${entry.imageUrl}?r=${Math.random()}`;
-						img.src = cacheBusterUrl;
+		setIsLoading(true);
+		setProgress(0);
 
-						await new Promise((resolve, reject) => {
-							img.onload = resolve;
-							img.onerror = reject;
-						});
+		for (let i = 0; i < entries.length; i++) {
+			const entry = entries[i];
+			if (entry.imageUrl) {
+				try {
+					await sleep(100);
+					const img = new window.Image();
+					img.crossOrigin = "anonymous";
+					const cacheBusterUrl = `${entry.imageUrl}?r=${Math.random()}`;
+					img.src = cacheBusterUrl;
 
-						images[entry.id] = cacheBusterUrl;
-					} catch (error) {
-						console.error(`Failed to load image for card ${entry.id}:`, error);
-					}
+					await new Promise((resolve, reject) => {
+						img.onload = resolve;
+						img.onerror = reject;
+					});
+
+					images[entry.id] = cacheBusterUrl;
+					setProgress(Math.round(((i + 1) / entries.length) * 100));
+				} catch (error) {
+					console.error(`Failed to load image for card ${entry.id}:`, error);
 				}
 			}
+		}
 
-			setCardImages(images);
-			setIsLoading(false);
-		};
-
-		loadImages();
-	}, [deck]);
+		setCardImages(images);
+		setIsLoading(false);
+		setOpen(true);
+	};
 
 	const cards = Object.values(deck.entries).flatMap((entry) =>
 		Array(entry.quantity).fill({ ...entry })
@@ -120,15 +124,11 @@ const DeckPdfGenerator = ({ deck }: { deck: Deck }) => {
 		setOpen(false);
 	};
 
-	if (isLoading) {
-		return <div>Loading images...</div>;
-	}
-
 	if (isMobile) {
 		return (
-			<Button onClick={handleDownload} className='flex gap-2'>
+			<Button onClick={loadImages} className='flex gap-2' disabled={isLoading}>
 				<Printer className='h-4 w-4' />
-				Download PDF
+				{isLoading ? `Loading ${progress}%` : "Download PDF"}
 			</Button>
 		);
 	}
@@ -136,24 +136,34 @@ const DeckPdfGenerator = ({ deck }: { deck: Deck }) => {
 	return (
 		<Dialog open={open} onOpenChange={setOpen}>
 			<DialogTrigger asChild>
-				<Button variant='outline' className='flex gap-2'>
+				<Button
+					variant='outline'
+					className='flex gap-2'
+					onClick={(e) => {
+						e.preventDefault();
+						if (!open) loadImages();
+					}}
+					disabled={isLoading}
+				>
 					<Printer className='h-4 w-4' />
-					Print Proxies
+					{isLoading ? `Loading ${progress}%` : "Print Proxies"}
 				</Button>
 			</DialogTrigger>
-			<DialogContent className='max-w-4xl h-[80vh]'>
-				<div className='flex flex-col h-full gap-4'>
-					<PDFViewer className='flex-1 w-full'>
-						<PdfDocument />
-					</PDFViewer>
-					<div className='flex justify-end gap-2'>
-						<Button variant='outline' onClick={() => setOpen(false)}>
-							Cancel
-						</Button>
-						<Button onClick={handleDownload}>Download PDF</Button>
+			{open && (
+				<DialogContent className='max-w-4xl h-[80vh]'>
+					<div className='flex flex-col h-full gap-4'>
+						<PDFViewer className='flex-1 w-full'>
+							<PdfDocument />
+						</PDFViewer>
+						<div className='flex justify-end gap-2'>
+							<Button variant='outline' onClick={() => setOpen(false)}>
+								Cancel
+							</Button>
+							<Button onClick={handleDownload}>Download PDF</Button>
+						</div>
 					</div>
-				</div>
-			</DialogContent>
+				</DialogContent>
+			)}
 		</Dialog>
 	);
 };
