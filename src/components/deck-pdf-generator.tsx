@@ -9,7 +9,7 @@ const A4_WIDTH_PT = 595.28;
 const A4_HEIGHT_PT = 841.89;
 const CARD_WIDTH_PT = 178.58;
 const CARD_HEIGHT_PT = 249.45;
-const SPACING_PT = 1;
+const SPACING_PT = 0.5;
 const PADDING_PT = 26;
 
 const CARDS_PER_ROW = Math.floor((A4_WIDTH_PT + SPACING_PT) / (CARD_WIDTH_PT + SPACING_PT));
@@ -126,7 +126,16 @@ const DeckPdfGenerator = ({ deck }: { deck: Deck }) => {
 
 	if (isMobile) {
 		return (
-			<Button onClick={loadImages} className='flex gap-2' disabled={isLoading}>
+			<Button
+				onClick={async () => {
+					await loadImages();
+					if (!isLoading) {
+						await handleDownload();
+					}
+				}}
+				className='flex gap-2'
+				disabled={isLoading}
+			>
 				<Printer className='h-4 w-4' />
 				{isLoading ? `Loading ${progress}%` : "Download PDF"}
 			</Button>
