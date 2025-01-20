@@ -9,7 +9,7 @@ const A4_WIDTH_PT = 595.28;
 const A4_HEIGHT_PT = 841.89;
 const CARD_WIDTH_PT = 178.58;
 const CARD_HEIGHT_PT = 249.45;
-const SPACING_PT = 1.415;
+const SPACING_PT = 0.5;
 const PADDING_PT = 26;
 
 const CARDS_PER_ROW = Math.floor((A4_WIDTH_PT + SPACING_PT) / (CARD_WIDTH_PT + SPACING_PT));
@@ -19,6 +19,8 @@ const CARDS_PER_PAGE = CARDS_PER_ROW * CARDS_PER_COLUMN;
 const DeckPdfGenerator = ({ deck }: { deck: Deck }) => {
 	const [open, setOpen] = useState(false);
 	const [isMobile, setIsMobile] = useState(false);
+	const [cardImages, setCardImages] = useState<{ [key: string]: string }>({});
+	const [isLoading, setIsLoading] = useState(true);
 
 	useEffect(() => {
 		// we don't use css classes, because we don't want to render it at all on mobile
@@ -27,6 +29,34 @@ const DeckPdfGenerator = ({ deck }: { deck: Deck }) => {
 		window.addEventListener("resize", checkMobile);
 		return () => window.removeEventListener("resize", checkMobile);
 	}, []);
+
+	useEffect(() => {
+		const loadImages = async () => {
+			const images: { [key: string]: string } = {};
+
+			for (const entry of Object.values(deck.entries)) {
+				if (entry.imageUrl) {
+					try {
+						const response = await fetch(entry.imageUrl);
+						const blob = await response.blob();
+						const base64 = await new Promise<string>((resolve) => {
+							const reader = new FileReader();
+							reader.onloadend = () => resolve(reader.result as string);
+							reader.readAsDataURL(blob);
+						});
+						images[entry.id] = base64;
+					} catch (error) {
+						console.error(`Failed to load image for card ${entry.id}:`, error);
+					}
+				}
+			}
+
+			setCardImages(images);
+			setIsLoading(false);
+		};
+
+		loadImages();
+	}, [deck]);
 
 	const cards = Object.values(deck.entries).flatMap((entry) =>
 		Array(entry.quantity).fill({ ...entry })
@@ -58,7 +88,7 @@ const DeckPdfGenerator = ({ deck }: { deck: Deck }) => {
 							}}
 						>
 							<Image
-								src={card.imageUrl || ""}
+								src={cardImages[card.id] || ""}
 								style={{
 									width: "100%",
 									height: "100%",
@@ -84,6 +114,10 @@ const DeckPdfGenerator = ({ deck }: { deck: Deck }) => {
 		URL.revokeObjectURL(url);
 		setOpen(false);
 	};
+
+	if (isLoading) {
+		return <div>Loading images...</div>;
+	}
 
 	if (isMobile) {
 		return (
