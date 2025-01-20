@@ -86,8 +86,37 @@ const DeckPdfGenerator = ({ deck }: { deck: Deck }) => {
 						flexWrap: "wrap",
 						padding: PADDING_PT,
 						gap: SPACING_PT,
+						position: "relative",
 					}}
 				>
+					{Array.from({ length: CARDS_PER_ROW + 1 }).map((_, i) => (
+						<View
+							key={`vline-${i}`}
+							style={{
+								position: "absolute",
+								left: PADDING_PT + (CARD_WIDTH_PT + SPACING_PT) * i - SPACING_PT / 2,
+								top: 0,
+								width: "0.5pt",
+								height: "100%",
+								backgroundColor: "black",
+							}}
+						/>
+					))}
+
+					{Array.from({ length: CARDS_PER_COLUMN + 1 }).map((_, i) => (
+						<View
+							key={`hline-${i}`}
+							style={{
+								position: "absolute",
+								top: PADDING_PT + (CARD_HEIGHT_PT + SPACING_PT) * i - SPACING_PT / 2,
+								left: 0,
+								width: "100%",
+								height: "0.5pt",
+								backgroundColor: "black",
+							}}
+						/>
+					))}
+
 					{pageCards.map((card, cardIndex) => (
 						<View
 							key={`${card.id}-${cardIndex}`}
