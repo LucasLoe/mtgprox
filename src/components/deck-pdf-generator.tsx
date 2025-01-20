@@ -9,12 +9,14 @@ const A4_WIDTH_PT = 595.28;
 const A4_HEIGHT_PT = 841.89;
 const CARD_WIDTH_PT = 178.58;
 const CARD_HEIGHT_PT = 249.45;
-const SPACING_PT = 0.5;
+const SPACING_PT = 1;
 const PADDING_PT = 26;
 
 const CARDS_PER_ROW = Math.floor((A4_WIDTH_PT + SPACING_PT) / (CARD_WIDTH_PT + SPACING_PT));
 const CARDS_PER_COLUMN = Math.floor((A4_HEIGHT_PT + SPACING_PT) / (CARD_HEIGHT_PT + SPACING_PT));
 const CARDS_PER_PAGE = CARDS_PER_ROW * CARDS_PER_COLUMN;
+
+const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
 const DeckPdfGenerator = ({ deck }: { deck: Deck }) => {
 	const [open, setOpen] = useState(false);
@@ -23,7 +25,6 @@ const DeckPdfGenerator = ({ deck }: { deck: Deck }) => {
 	const [isLoading, setIsLoading] = useState(true);
 
 	useEffect(() => {
-		// we don't use css classes, because we don't want to render it at all on mobile
 		const checkMobile = () => setIsMobile(window.innerWidth <= 768);
 		checkMobile();
 		window.addEventListener("resize", checkMobile);
@@ -37,14 +38,17 @@ const DeckPdfGenerator = ({ deck }: { deck: Deck }) => {
 			for (const entry of Object.values(deck.entries)) {
 				if (entry.imageUrl) {
 					try {
-						const response = await fetch(entry.imageUrl);
-						const blob = await response.blob();
-						const base64 = await new Promise<string>((resolve) => {
-							const reader = new FileReader();
-							reader.onloadend = () => resolve(reader.result as string);
-							reader.readAsDataURL(blob);
+						await sleep(100);
+						const img = new window.Image();
+						const cacheBusterUrl = `${entry.imageUrl}?r=${Math.random()}`;
+						img.src = cacheBusterUrl;
+
+						await new Promise((resolve, reject) => {
+							img.onload = resolve;
+							img.onerror = reject;
 						});
-						images[entry.id] = base64;
+
+						images[entry.id] = cacheBusterUrl;
 					} catch (error) {
 						console.error(`Failed to load image for card ${entry.id}:`, error);
 					}
