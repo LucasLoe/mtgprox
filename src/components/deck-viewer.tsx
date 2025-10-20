@@ -1,7 +1,7 @@
 // components/deck-viewer.tsx
 import { Deck, HandleDeckChange, HandleDeckPrintingChange } from "@/types";
 import DeckOverview from "./deck-overview";
-import DeckPdfGenerator from "./deck-pdf-generator";
+import { CardPrintingDialog } from "./card-printing-dialog";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { LayoutGrid, List } from "lucide-react";
 import { useState } from "react";
@@ -62,7 +62,7 @@ export const DeckViewer = ({
 						Total Cards: <span className='font-semibold text-lg'>{deck.total}</span>
 					</p>
 				</div>
-				<DeckPdfGenerator deck={deck} />
+				<CardPrintingDialog deck={deck} />
 			</div>
 		</div>
 	);

@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, Fragment } from "react";
 import { Button } from "@/components/ui/button";
 import { Document, Page, View, Image, PDFViewer, pdf, Line, Svg } from "@react-pdf/renderer";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -53,7 +53,7 @@ const PrintSettingsDialog = ({
 							<div className='flex items-center space-x-2'>
 								<RadioGroupItem value='crosshair' id='crosshair' />
 								<Label htmlFor='crosshair' className='font-normal cursor-pointer'>
-									Crosshair (no spacing)
+									Crosshair
 								</Label>
 							</div>
 						</RadioGroup>
@@ -136,13 +136,46 @@ export const CardPrintingDialog = ({ deck }: { deck: Deck }) => {
 
 	// Calculate cards per page based on delimiter type
 	const spacing = delimiter === "crosshair" ? 0 : SPACING_PT;
-	const CARDS_PER_ROW = Math.floor((A4_WIDTH_PT + spacing) / (CARD_WIDTH_PT + spacing));
-	const CARDS_PER_COLUMN = Math.floor((A4_HEIGHT_PT + spacing) / (CARD_HEIGHT_PT + spacing));
+	const CARDS_PER_ROW = Math.floor(
+		(A4_WIDTH_PT - 2 * PADDING_PT + spacing) / (CARD_WIDTH_PT + spacing)
+	);
+	const CARDS_PER_COLUMN = Math.floor(
+		(A4_HEIGHT_PT - 2 * PADDING_PT + spacing) / (CARD_HEIGHT_PT + spacing)
+	);
 	const CARDS_PER_PAGE = CARDS_PER_ROW * CARDS_PER_COLUMN;
 
 	const pages = Array.from({ length: Math.ceil(cards.length / CARDS_PER_PAGE) }, (_, i) =>
 		cards.slice(i * CARDS_PER_PAGE, (i + 1) * CARDS_PER_PAGE)
 	);
+
+	// Helper function to calculate card position
+	const getCardPosition = (cardIndex: number) => {
+		const col = cardIndex % CARDS_PER_ROW;
+		const row = Math.floor(cardIndex / CARDS_PER_ROW);
+		const x = PADDING_PT + col * (CARD_WIDTH_PT + spacing);
+		const y = PADDING_PT + row * (CARD_HEIGHT_PT + spacing);
+		return { x, y };
+	};
+
+	// Helper function to calculate grid line position
+	const getGridLinePosition = (index: number, isVertical: boolean) => {
+		if (isVertical) {
+			return PADDING_PT + index * (CARD_WIDTH_PT + spacing) - spacing / 2;
+		} else {
+			return PADDING_PT + index * (CARD_HEIGHT_PT + spacing) - spacing / 2;
+		}
+	};
+
+	// Helper function to calculate crosshair position
+	const getCrosshairPosition = (col: number, row: number) => {
+		const x = PADDING_PT + col * CARD_WIDTH_PT;
+		const y = PADDING_PT + row * CARD_HEIGHT_PT;
+		return { x, y };
+	};
+
+	// Calculate the total grid area dimensions
+	const gridWidth = CARDS_PER_ROW * CARD_WIDTH_PT + (CARDS_PER_ROW - 1) * spacing;
+	const gridHeight = CARDS_PER_COLUMN * CARD_HEIGHT_PT + (CARDS_PER_COLUMN - 1) * spacing;
 
 	const PdfDocument = () => (
 		<Document>
@@ -151,14 +184,22 @@ export const CardPrintingDialog = ({ deck }: { deck: Deck }) => {
 					key={pageIndex}
 					size='A4'
 					style={{
-						flexDirection: "row",
-						flexWrap: "wrap",
-						padding: PADDING_PT,
-						gap: spacing,
 						position: "relative",
 					}}
 				>
-					{/* White border mode: render grid lines (current behavior) */}
+					{/* Black background for card grid area */}
+					<View
+						style={{
+							position: "absolute",
+							left: PADDING_PT,
+							top: PADDING_PT,
+							width: gridWidth,
+							height: gridHeight,
+							backgroundColor: "black",
+						}}
+					/>
+
+					{/* White border mode: render grid lines */}
 					{delimiter === "white-border" && (
 						<>
 							{Array.from({ length: CARDS_PER_ROW + 1 }).map((_, i) => (
@@ -166,11 +207,11 @@ export const CardPrintingDialog = ({ deck }: { deck: Deck }) => {
 									key={`vline-${i}`}
 									style={{
 										position: "absolute",
-										left: PADDING_PT + (CARD_WIDTH_PT + SPACING_PT) * i - SPACING_PT / 2,
-										top: 0,
+										left: getGridLinePosition(i, true),
+										top: PADDING_PT,
 										width: "0.5pt",
-										height: "100%",
-										backgroundColor: "black",
+										height: gridHeight,
+										backgroundColor: "white",
 									}}
 								/>
 							))}
@@ -180,36 +221,44 @@ export const CardPrintingDialog = ({ deck }: { deck: Deck }) => {
 									key={`hline-${i}`}
 									style={{
 										position: "absolute",
-										top: PADDING_PT + (CARD_HEIGHT_PT + SPACING_PT) * i - SPACING_PT / 2,
-										left: 0,
-										width: "100%",
+										top: getGridLinePosition(i, false),
+										left: PADDING_PT,
+										width: gridWidth,
 										height: "0.5pt",
-										backgroundColor: "black",
+										backgroundColor: "white",
 									}}
 								/>
 							))}
 						</>
 					)}
-					{/* 
-					{pageCards.map((card, cardIndex) => (
-						<View
-							key={`${card.id}-${cardIndex}`}
-							style={{
-								width: CARD_WIDTH_PT,
-								height: CARD_HEIGHT_PT,
-							}}
-						>
-							<Image
-								src={cardImages[card.id] || ""}
+
+					{/* Cards with absolute positioning */}
+					{pageCards.map((card, cardIndex) => {
+						const { x, y } = getCardPosition(cardIndex);
+						return (
+							<View
+								key={`${card.id}-${cardIndex}`}
 								style={{
-									width: "100%",
-									height: "100%",
-									objectFit: "contain",
+									position: "absolute",
+									left: x,
+									top: y,
+									width: CARD_WIDTH_PT,
+									height: CARD_HEIGHT_PT,
 								}}
-							/>
-						</View>
-					))} */}
-					{/* Crosshair mode: render crosshairs at grid intersections on edges */}
+							>
+								<Image
+									src={cardImages[card.id] || ""}
+									style={{
+										width: "100%",
+										height: "100%",
+										objectFit: "contain",
+									}}
+								/>
+							</View>
+						);
+					})}
+
+					{/* Crosshair mode: render crosshairs at grid intersections */}
 					{delimiter === "crosshair" && (
 						<Svg
 							style={{
@@ -220,151 +269,36 @@ export const CardPrintingDialog = ({ deck }: { deck: Deck }) => {
 								height: A4_HEIGHT_PT,
 							}}
 						>
-							{/* Top edge: 2 crosshairs */}
-							<Line
-								x1={PADDING_PT + CARD_WIDTH_PT}
-								y1={PADDING_PT - CROSSHAIR_LENGTH_PT / 2}
-								x2={PADDING_PT + CARD_WIDTH_PT}
-								y2={PADDING_PT + CROSSHAIR_LENGTH_PT / 2}
-								strokeWidth='1'
-								stroke='#36C9E3'
-							/>
-							<Line
-								x1={PADDING_PT + CARD_WIDTH_PT - CROSSHAIR_LENGTH_PT / 2}
-								y1={PADDING_PT}
-								x2={PADDING_PT + CARD_WIDTH_PT + CROSSHAIR_LENGTH_PT / 2}
-								y2={PADDING_PT}
-								strokeWidth='1'
-								stroke='#36C9E3'
-							/>
+							{Array.from({ length: CARDS_PER_ROW + 1 }).map((_, col) =>
+								Array.from({ length: CARDS_PER_COLUMN + 1 }).map((_, row) => {
+									const { x, y } = getCrosshairPosition(col, row);
 
-							<Line
-								x1={PADDING_PT + CARD_WIDTH_PT * 2}
-								y1={PADDING_PT - CROSSHAIR_LENGTH_PT / 2}
-								x2={PADDING_PT + CARD_WIDTH_PT * 2}
-								y2={PADDING_PT + CROSSHAIR_LENGTH_PT / 2}
-								strokeWidth='1'
-								stroke='#36C9E3'
-							/>
-							<Line
-								x1={PADDING_PT + CARD_WIDTH_PT * 2 - CROSSHAIR_LENGTH_PT / 2}
-								y1={PADDING_PT}
-								x2={PADDING_PT + CARD_WIDTH_PT * 2 + CROSSHAIR_LENGTH_PT / 2}
-								y2={PADDING_PT}
-								strokeWidth='1'
-								stroke='#36C9E3'
-							/>
-
-							{/* Bottom edge: 2 crosshairs */}
-							<Line
-								x1={PADDING_PT + CARD_WIDTH_PT}
-								y1={PADDING_PT + CARD_HEIGHT_PT * 3 - CROSSHAIR_LENGTH_PT / 2}
-								x2={PADDING_PT + CARD_WIDTH_PT}
-								y2={PADDING_PT + CARD_HEIGHT_PT * 3 + CROSSHAIR_LENGTH_PT / 2}
-								strokeWidth='1'
-								stroke='#36C9E3'
-							/>
-							<Line
-								x1={PADDING_PT + CARD_WIDTH_PT - CROSSHAIR_LENGTH_PT / 2}
-								y1={PADDING_PT + CARD_HEIGHT_PT * 3}
-								x2={PADDING_PT + CARD_WIDTH_PT + CROSSHAIR_LENGTH_PT / 2}
-								y2={PADDING_PT + CARD_HEIGHT_PT * 3}
-								strokeWidth='1'
-								stroke='#36C9E3'
-							/>
-
-							<Line
-								x1={PADDING_PT + CARD_WIDTH_PT * 2}
-								y1={PADDING_PT + CARD_HEIGHT_PT * 3 - CROSSHAIR_LENGTH_PT / 2}
-								x2={PADDING_PT + CARD_WIDTH_PT * 2}
-								y2={PADDING_PT + CARD_HEIGHT_PT * 3 + CROSSHAIR_LENGTH_PT / 2}
-								strokeWidth='1'
-								stroke='#36C9E3'
-							/>
-							<Line
-								x1={PADDING_PT + CARD_WIDTH_PT * 2 - CROSSHAIR_LENGTH_PT / 2}
-								y1={PADDING_PT + CARD_HEIGHT_PT * 3}
-								x2={PADDING_PT + CARD_WIDTH_PT * 2 + CROSSHAIR_LENGTH_PT / 2}
-								y2={PADDING_PT + CARD_HEIGHT_PT * 3}
-								strokeWidth='1'
-								stroke='#36C9E3'
-							/>
-
-							{/* Left edge: 2 crosshairs */}
-							<Line
-								x1={PADDING_PT}
-								y1={PADDING_PT + CARD_HEIGHT_PT - CROSSHAIR_LENGTH_PT / 2}
-								x2={PADDING_PT}
-								y2={PADDING_PT + CARD_HEIGHT_PT + CROSSHAIR_LENGTH_PT / 2}
-								strokeWidth='1'
-								stroke='#36C9E3'
-							/>
-							<Line
-								x1={PADDING_PT - CROSSHAIR_LENGTH_PT / 2}
-								y1={PADDING_PT + CARD_HEIGHT_PT}
-								x2={PADDING_PT + CROSSHAIR_LENGTH_PT / 2}
-								y2={PADDING_PT + CARD_HEIGHT_PT}
-								strokeWidth='1'
-								stroke='#36C9E3'
-							/>
-
-							<Line
-								x1={PADDING_PT}
-								y1={PADDING_PT + CARD_HEIGHT_PT * 2 - CROSSHAIR_LENGTH_PT / 2}
-								x2={PADDING_PT}
-								y2={PADDING_PT + CARD_HEIGHT_PT * 2 + CROSSHAIR_LENGTH_PT / 2}
-								strokeWidth='1'
-								stroke='#36C9E3'
-							/>
-							<Line
-								x1={PADDING_PT - CROSSHAIR_LENGTH_PT / 2}
-								y1={PADDING_PT + CARD_HEIGHT_PT * 2}
-								x2={PADDING_PT + CROSSHAIR_LENGTH_PT / 2}
-								y2={PADDING_PT + CARD_HEIGHT_PT * 2}
-								strokeWidth='1'
-								stroke='#36C9E3'
-							/>
-
-							{/* Right edge: 2 crosshairs */}
-							<Line
-								x1={PADDING_PT + CARD_WIDTH_PT * 3}
-								y1={PADDING_PT + CARD_HEIGHT_PT - CROSSHAIR_LENGTH_PT / 2}
-								x2={PADDING_PT + CARD_WIDTH_PT * 3}
-								y2={PADDING_PT + CARD_HEIGHT_PT + CROSSHAIR_LENGTH_PT / 2}
-								strokeWidth='1'
-								stroke='#36C9E3'
-							/>
-							<Line
-								x1={PADDING_PT + CARD_WIDTH_PT * 3 - CROSSHAIR_LENGTH_PT / 2}
-								y1={PADDING_PT + CARD_HEIGHT_PT}
-								x2={PADDING_PT + CARD_WIDTH_PT * 3 + CROSSHAIR_LENGTH_PT / 2}
-								y2={PADDING_PT + CARD_HEIGHT_PT}
-								strokeWidth='1'
-								stroke='#36C9E3'
-							/>
-
-							<Line
-								x1={PADDING_PT + CARD_WIDTH_PT * 3}
-								y1={PADDING_PT + CARD_HEIGHT_PT * 2 - CROSSHAIR_LENGTH_PT / 2}
-								x2={PADDING_PT + CARD_WIDTH_PT * 3}
-								y2={PADDING_PT + CARD_HEIGHT_PT * 2 + CROSSHAIR_LENGTH_PT / 2}
-								strokeWidth='1'
-								stroke='#36C9E3'
-							/>
-							<Line
-								x1={PADDING_PT + CARD_WIDTH_PT * 3 - CROSSHAIR_LENGTH_PT / 2}
-								y1={PADDING_PT + CARD_HEIGHT_PT * 2}
-								x2={PADDING_PT + CARD_WIDTH_PT * 3 + CROSSHAIR_LENGTH_PT / 2}
-								y2={PADDING_PT + CARD_HEIGHT_PT * 2}
-								strokeWidth='1'
-								stroke='#36C9E3'
-							/>
+									return (
+										<Fragment key={`crosshair-${col}-${row}`}>
+											{/* Vertical line */}
+											<Line
+												x1={x}
+												y1={y - CROSSHAIR_LENGTH_PT / 2}
+												x2={x}
+												y2={y + CROSSHAIR_LENGTH_PT / 2}
+												strokeWidth='0.5'
+												stroke='#36C9E3'
+											/>
+											{/* Horizontal line */}
+											<Line
+												x1={x - CROSSHAIR_LENGTH_PT / 2}
+												y1={y}
+												x2={x + CROSSHAIR_LENGTH_PT / 2}
+												y2={y}
+												strokeWidth='0.5'
+												stroke='#36C9E3'
+											/>
+										</Fragment>
+									);
+								})
+							)}
 						</Svg>
 					)}
-					{/* Test SVG - Giant Red Line */}
-					<Svg height='210' width='500'>
-						<Line x1='0' y1='0' x2='200' y2='200' strokeWidth={2} stroke='rgb(255,0,0)' />
-					</Svg>
 				</Page>
 			))}
 		</Document>
