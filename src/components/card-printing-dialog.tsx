@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { Document, Page, View, Image, PDFViewer, pdf } from "@react-pdf/renderer";
+import { Document, Page, View, Image, PDFViewer, pdf, Line, Svg } from "@react-pdf/renderer";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Printer } from "lucide-react";
 import { Deck } from "@/types";
@@ -13,6 +13,7 @@ const CARD_WIDTH_PT = 178.58;
 const CARD_HEIGHT_PT = 249.45;
 const SPACING_PT = 0.5;
 const PADDING_PT = 26;
+const CROSSHAIR_LENGTH_PT = 5.67; // 2mm in points (1mm = 2.835pt)
 
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
@@ -72,7 +73,7 @@ const PrintSettingsDialog = ({
 	);
 };
 
-const DeckPdfGenerator = ({ deck }: { deck: Deck }) => {
+export const CardPrintingDialog = ({ deck }: { deck: Deck }) => {
 	const [settingsOpen, setSettingsOpen] = useState(false);
 	const [pdfOpen, setPdfOpen] = useState(false);
 	const [isMobile, setIsMobile] = useState(false);
@@ -189,9 +190,7 @@ const DeckPdfGenerator = ({ deck }: { deck: Deck }) => {
 							))}
 						</>
 					)}
-
-					{/* Crosshair mode: no grid lines, cards with no spacing */}
-
+					{/* 
 					{pageCards.map((card, cardIndex) => (
 						<View
 							key={`${card.id}-${cardIndex}`}
@@ -209,7 +208,163 @@ const DeckPdfGenerator = ({ deck }: { deck: Deck }) => {
 								}}
 							/>
 						</View>
-					))}
+					))} */}
+					{/* Crosshair mode: render crosshairs at grid intersections on edges */}
+					{delimiter === "crosshair" && (
+						<Svg
+							style={{
+								position: "absolute",
+								left: 0,
+								top: 0,
+								width: A4_WIDTH_PT,
+								height: A4_HEIGHT_PT,
+							}}
+						>
+							{/* Top edge: 2 crosshairs */}
+							<Line
+								x1={PADDING_PT + CARD_WIDTH_PT}
+								y1={PADDING_PT - CROSSHAIR_LENGTH_PT / 2}
+								x2={PADDING_PT + CARD_WIDTH_PT}
+								y2={PADDING_PT + CROSSHAIR_LENGTH_PT / 2}
+								strokeWidth='1'
+								stroke='#36C9E3'
+							/>
+							<Line
+								x1={PADDING_PT + CARD_WIDTH_PT - CROSSHAIR_LENGTH_PT / 2}
+								y1={PADDING_PT}
+								x2={PADDING_PT + CARD_WIDTH_PT + CROSSHAIR_LENGTH_PT / 2}
+								y2={PADDING_PT}
+								strokeWidth='1'
+								stroke='#36C9E3'
+							/>
+
+							<Line
+								x1={PADDING_PT + CARD_WIDTH_PT * 2}
+								y1={PADDING_PT - CROSSHAIR_LENGTH_PT / 2}
+								x2={PADDING_PT + CARD_WIDTH_PT * 2}
+								y2={PADDING_PT + CROSSHAIR_LENGTH_PT / 2}
+								strokeWidth='1'
+								stroke='#36C9E3'
+							/>
+							<Line
+								x1={PADDING_PT + CARD_WIDTH_PT * 2 - CROSSHAIR_LENGTH_PT / 2}
+								y1={PADDING_PT}
+								x2={PADDING_PT + CARD_WIDTH_PT * 2 + CROSSHAIR_LENGTH_PT / 2}
+								y2={PADDING_PT}
+								strokeWidth='1'
+								stroke='#36C9E3'
+							/>
+
+							{/* Bottom edge: 2 crosshairs */}
+							<Line
+								x1={PADDING_PT + CARD_WIDTH_PT}
+								y1={PADDING_PT + CARD_HEIGHT_PT * 3 - CROSSHAIR_LENGTH_PT / 2}
+								x2={PADDING_PT + CARD_WIDTH_PT}
+								y2={PADDING_PT + CARD_HEIGHT_PT * 3 + CROSSHAIR_LENGTH_PT / 2}
+								strokeWidth='1'
+								stroke='#36C9E3'
+							/>
+							<Line
+								x1={PADDING_PT + CARD_WIDTH_PT - CROSSHAIR_LENGTH_PT / 2}
+								y1={PADDING_PT + CARD_HEIGHT_PT * 3}
+								x2={PADDING_PT + CARD_WIDTH_PT + CROSSHAIR_LENGTH_PT / 2}
+								y2={PADDING_PT + CARD_HEIGHT_PT * 3}
+								strokeWidth='1'
+								stroke='#36C9E3'
+							/>
+
+							<Line
+								x1={PADDING_PT + CARD_WIDTH_PT * 2}
+								y1={PADDING_PT + CARD_HEIGHT_PT * 3 - CROSSHAIR_LENGTH_PT / 2}
+								x2={PADDING_PT + CARD_WIDTH_PT * 2}
+								y2={PADDING_PT + CARD_HEIGHT_PT * 3 + CROSSHAIR_LENGTH_PT / 2}
+								strokeWidth='1'
+								stroke='#36C9E3'
+							/>
+							<Line
+								x1={PADDING_PT + CARD_WIDTH_PT * 2 - CROSSHAIR_LENGTH_PT / 2}
+								y1={PADDING_PT + CARD_HEIGHT_PT * 3}
+								x2={PADDING_PT + CARD_WIDTH_PT * 2 + CROSSHAIR_LENGTH_PT / 2}
+								y2={PADDING_PT + CARD_HEIGHT_PT * 3}
+								strokeWidth='1'
+								stroke='#36C9E3'
+							/>
+
+							{/* Left edge: 2 crosshairs */}
+							<Line
+								x1={PADDING_PT}
+								y1={PADDING_PT + CARD_HEIGHT_PT - CROSSHAIR_LENGTH_PT / 2}
+								x2={PADDING_PT}
+								y2={PADDING_PT + CARD_HEIGHT_PT + CROSSHAIR_LENGTH_PT / 2}
+								strokeWidth='1'
+								stroke='#36C9E3'
+							/>
+							<Line
+								x1={PADDING_PT - CROSSHAIR_LENGTH_PT / 2}
+								y1={PADDING_PT + CARD_HEIGHT_PT}
+								x2={PADDING_PT + CROSSHAIR_LENGTH_PT / 2}
+								y2={PADDING_PT + CARD_HEIGHT_PT}
+								strokeWidth='1'
+								stroke='#36C9E3'
+							/>
+
+							<Line
+								x1={PADDING_PT}
+								y1={PADDING_PT + CARD_HEIGHT_PT * 2 - CROSSHAIR_LENGTH_PT / 2}
+								x2={PADDING_PT}
+								y2={PADDING_PT + CARD_HEIGHT_PT * 2 + CROSSHAIR_LENGTH_PT / 2}
+								strokeWidth='1'
+								stroke='#36C9E3'
+							/>
+							<Line
+								x1={PADDING_PT - CROSSHAIR_LENGTH_PT / 2}
+								y1={PADDING_PT + CARD_HEIGHT_PT * 2}
+								x2={PADDING_PT + CROSSHAIR_LENGTH_PT / 2}
+								y2={PADDING_PT + CARD_HEIGHT_PT * 2}
+								strokeWidth='1'
+								stroke='#36C9E3'
+							/>
+
+							{/* Right edge: 2 crosshairs */}
+							<Line
+								x1={PADDING_PT + CARD_WIDTH_PT * 3}
+								y1={PADDING_PT + CARD_HEIGHT_PT - CROSSHAIR_LENGTH_PT / 2}
+								x2={PADDING_PT + CARD_WIDTH_PT * 3}
+								y2={PADDING_PT + CARD_HEIGHT_PT + CROSSHAIR_LENGTH_PT / 2}
+								strokeWidth='1'
+								stroke='#36C9E3'
+							/>
+							<Line
+								x1={PADDING_PT + CARD_WIDTH_PT * 3 - CROSSHAIR_LENGTH_PT / 2}
+								y1={PADDING_PT + CARD_HEIGHT_PT}
+								x2={PADDING_PT + CARD_WIDTH_PT * 3 + CROSSHAIR_LENGTH_PT / 2}
+								y2={PADDING_PT + CARD_HEIGHT_PT}
+								strokeWidth='1'
+								stroke='#36C9E3'
+							/>
+
+							<Line
+								x1={PADDING_PT + CARD_WIDTH_PT * 3}
+								y1={PADDING_PT + CARD_HEIGHT_PT * 2 - CROSSHAIR_LENGTH_PT / 2}
+								x2={PADDING_PT + CARD_WIDTH_PT * 3}
+								y2={PADDING_PT + CARD_HEIGHT_PT * 2 + CROSSHAIR_LENGTH_PT / 2}
+								strokeWidth='1'
+								stroke='#36C9E3'
+							/>
+							<Line
+								x1={PADDING_PT + CARD_WIDTH_PT * 3 - CROSSHAIR_LENGTH_PT / 2}
+								y1={PADDING_PT + CARD_HEIGHT_PT * 2}
+								x2={PADDING_PT + CARD_WIDTH_PT * 3 + CROSSHAIR_LENGTH_PT / 2}
+								y2={PADDING_PT + CARD_HEIGHT_PT * 2}
+								strokeWidth='1'
+								stroke='#36C9E3'
+							/>
+						</Svg>
+					)}
+					{/* Test SVG - Giant Red Line */}
+					<Svg height='210' width='500'>
+						<Line x1='0' y1='0' x2='200' y2='200' strokeWidth={2} stroke='rgb(255,0,0)' />
+					</Svg>
 				</Page>
 			))}
 		</Document>
@@ -285,5 +440,3 @@ const DeckPdfGenerator = ({ deck }: { deck: Deck }) => {
 		</>
 	);
 };
-
-export default DeckPdfGenerator;

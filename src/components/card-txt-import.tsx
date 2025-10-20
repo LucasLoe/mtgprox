@@ -81,6 +81,8 @@ const transformCardsToDeck = (results: { card: Card; quantity: number }[]): Deck
 				quantity,
 				name: card.name,
 				imageUrl: card.image_uris?.normal || card.card_faces?.[0].image_uris?.normal,
+				type_line: card.type_line,
+				mana_cost: card.mana_cost,
 			};
 			deck.total += quantity;
 			return deck;
@@ -95,8 +97,8 @@ export const DeckImport = ({ setDeck }: { setDeck: (deck: Deck) => void }) => {
 	return (
 		<Dialog open={open} onOpenChange={setOpen}>
 			<DialogTrigger asChild>
-				<Button variant='outline' className='flex place-items-center gap-x-2 h-12'>
-					<Import />
+				<Button variant='outline' className='flex place-items-center gap-x-2 '>
+					<Import className='size-4' />
 					<p className='hidden md:block'>TXT</p>
 				</Button>
 			</DialogTrigger>

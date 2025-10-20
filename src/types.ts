@@ -40,6 +40,8 @@ export type DeckEntry = {
 	id: string;
 	quantity: number;
 	name: string; // For easier display without looking up
+	mana_cost: string;
+	type_line: string;
 	imageUrl?: string; // Cache the image URL
 };
 

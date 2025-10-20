@@ -5,6 +5,8 @@ export const updateCardQuantity = (
 	id: string,
 	name: string,
 	imageUrl: string | undefined,
+	type_line: string,
+	mana_cost: string,
 	change: number
 ): Deck => {
 	const entry = deck.entries[id];
@@ -27,6 +29,8 @@ export const updateCardQuantity = (
 				id,
 				name,
 				imageUrl,
+				type_line,
+				mana_cost,
 				quantity: newQuantity,
 			},
 		},

@@ -10,13 +10,25 @@ type CardItemProps = {
 	card: Card | DeckEntry;
 	deck: Deck;
 	handleDeckCardQuantityChange: HandleDeckChange;
+	invisibleButtons?: boolean;
 };
 
-const PlusButton = ({ onClickFn, cns }: { onClickFn: (args: any) => void; cns?: string }) => {
+const PlusButton = ({
+	onClickFn,
+	cns,
+	invisibleButtons,
+}: {
+	onClickFn: (args: any) => void;
+	cns?: string;
+	invisibleButtons?: boolean;
+}) => {
 	return (
 		<Button
-			className={cn("bg-slate-800 hover:bg-slate-700 text-white size-8", cns)}
-			variant={"default"}
+			className={cn(
+				invisibleButtons ? "" : "bg-slate-800 hover:bg-slate-700 text-white size-8",
+				cns
+			)}
+			variant={invisibleButtons ? "link" : "default"}
 			size={"icon"}
 			onClick={onClickFn}
 		>
@@ -25,11 +37,22 @@ const PlusButton = ({ onClickFn, cns }: { onClickFn: (args: any) => void; cns?: 
 	);
 };
 
-const MinusButton = ({ onClickFn, cns }: { onClickFn: (args: any) => void; cns?: string }) => {
+const MinusButton = ({
+	onClickFn,
+	cns,
+	invisibleButtons,
+}: {
+	onClickFn: (args: any) => void;
+	cns?: string;
+	invisibleButtons?: boolean;
+}) => {
 	return (
 		<Button
-			className={cn("bg-slate-800 hover:bg-slate-700 text-white size-8", cns)}
-			variant={"default"}
+			className={cn(
+				invisibleButtons ? "" : "bg-slate-800 hover:bg-slate-700 text-white size-8",
+				cns
+			)}
+			variant={invisibleButtons ? "link" : "default"}
 			size={"icon"}
 			onClick={onClickFn}
 		>
@@ -38,9 +61,20 @@ const MinusButton = ({ onClickFn, cns }: { onClickFn: (args: any) => void; cns?:
 	);
 };
 
-const Quantity = ({ quantity }: { quantity: number }) => {
+const Quantity = ({
+	quantity,
+	invisibleButtons,
+}: {
+	quantity: number;
+	invisibleButtons?: boolean;
+}) => {
 	return (
-		<span className='font-medium h-8 min-w-8 bg-slate-600 text-slate-300 flex place-items-center text-center justify-center  '>
+		<span
+			className={cn(
+				"font-medium h-8 min-w-8  flex place-items-center text-center justify-center",
+				invisibleButtons ? " bg-slate-700 rounded-full" : "bg-slate-600 text-slate-300"
+			)}
+		>
 			{quantity}
 		</span>
 	);
@@ -56,16 +90,29 @@ export default function CountBtn({ className }: CountBtnProps) {
 	);
 }
 
-export const CardQuantity = ({ card, deck, handleDeckCardQuantityChange }: CardItemProps) => {
+export const CardQuantity = ({
+	card,
+	deck,
+	handleDeckCardQuantityChange,
+	invisibleButtons,
+}: CardItemProps) => {
 	const quantity = deck?.entries[card.id]?.quantity || 0;
 
 	if (quantity === 0) return <PlusButton onClickFn={() => handleDeckCardQuantityChange(card, 1)} />;
 
 	return (
 		<div className='flex place-items-center rounded'>
-			<MinusButton cns='rounded-r-none' onClickFn={() => handleDeckCardQuantityChange(card, -1)} />
-			<Quantity quantity={quantity} />
-			<PlusButton cns='rounded-l-none' onClickFn={() => handleDeckCardQuantityChange(card, 1)} />
+			<MinusButton
+				cns='rounded-r-none'
+				onClickFn={() => handleDeckCardQuantityChange(card, -1)}
+				invisibleButtons={invisibleButtons}
+			/>
+			<Quantity quantity={quantity} invisibleButtons={invisibleButtons} />
+			<PlusButton
+				cns='rounded-l-none'
+				onClickFn={() => handleDeckCardQuantityChange(card, 1)}
+				invisibleButtons={invisibleButtons}
+			/>
 		</div>
 	);
 };
