@@ -30,6 +30,7 @@ const fetchCards = async (cards: { quantity: number; name: string; set?: string 
 			const response = await fetch(url);
 
 			if (!response.ok) {
+				// Fallback 1: Try without set code
 				if (set) {
 					const fallbackResponse = await fetch(
 						`https://api.scryfall.com/cards/named?exact=${name}&format=json`
@@ -40,6 +41,17 @@ const fetchCards = async (cards: { quantity: number; name: string; set?: string 
 						continue;
 					}
 				}
+
+				// Fallback 2: Try fuzzy search (for Omenpath cards with different printed names)
+				const fuzzyResponse = await fetch(
+					`https://api.scryfall.com/cards/named?fuzzy=${encodeURIComponent(name)}&format=json`
+				);
+				if (fuzzyResponse.ok) {
+					const card: Card = await fuzzyResponse.json();
+					results.push({ card, quantity });
+					continue;
+				}
+
 				errors.push(name);
 				continue;
 			}
@@ -54,19 +66,33 @@ const fetchCards = async (cards: { quantity: number; name: string; set?: string 
 	return { results, errors };
 };
 
+// Header lines to discard (case-insensitive)
+const HEADER_PATTERN = /^(deck|sideboard|commander|companion|maindeck|\/\/.*)$/i;
+
+// Unified card pattern handles all three formats:
+// - MTGA: "4 Lightning Bolt [LEB]"
+// - Simple: "4 Lightning Bolt"
+// - Moxfield: "1 Black Lotus (LEB) 232"
+const CARD_PATTERN = /^(?:(\d+)\s+)?([^\[\(\n]+?)(?:\s*(?:\[([^\]]+)\]|\(([^)]+)\)))?(?:\s+\d+)?$/;
+
 const parseDeckList = (text: string) => {
 	return text
 		.split("\n")
-		.filter((line) => line.trim())
+		.map((line) => line.trim())
+		.filter((line) => line && !HEADER_PATTERN.test(line))
 		.map((line) => {
-			const match = line.match(/^(?:(\d+)\s+)?([^<\[]+)(?:.*?\[([^\]]+)\])?/);
+			// Handle "SB:" prefix (sideboard indicator used by some exporters)
+			const cleanLine = line.replace(/^SB:\s*/i, "");
+
+			const match = cleanLine.match(CARD_PATTERN);
 			if (!match) return null;
 
-			return {
-				quantity: match[1] ? parseInt(match[1], 10) : 1,
-				name: match[2].trim(),
-				set: match[3] ? match[3].trim() : undefined,
-			};
+			const quantity = match[1] ? parseInt(match[1], 10) : 1;
+			const name = match[2].trim();
+			// Set can be in group 3 (brackets) or group 4 (parentheses)
+			const set = match[3]?.trim() || match[4]?.trim();
+
+			return { quantity, name, set };
 		})
 		.filter(
 			(card): card is { quantity: number; name: string; set: string | undefined } => card !== null
@@ -144,7 +170,7 @@ const DeckImportContent = ({ setDeck, onClose }: DeckImportContentProps) => {
 	return (
 		<DialogContent className='sm:max-w-[625px]'>
 			<DialogHeader>
-				<DialogTitle>Import Deck List (MTGA notation)</DialogTitle>
+				<DialogTitle>Import Deck List</DialogTitle>
 			</DialogHeader>
 			<div className='space-y-4'>
 				<Textarea

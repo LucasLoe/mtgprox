@@ -3,7 +3,8 @@ import { Deck, HandleDeckChange, HandleDeckPrintingChange } from "@/types";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { CardQuantity } from "./card-quantity";
 import { DeckEntry } from "@/types";
-import { CardPrintingDialog } from "./card-printing-dialog";
+import CardPrinting from "./card-printing";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 
@@ -218,12 +219,25 @@ export const DeckListView = ({
 			</ScrollArea>
 
 			{selectedCard && (
-				<CardPrintingDialog
-					card={selectedCard}
-					open={dialogOpen}
-					onOpenChange={setDialogOpen}
-					onSelectPrinting={handleDeckCardPrintingChange}
-				/>
+				<Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+					<DialogContent className='sm:max-w-[400px]'>
+						<DialogHeader>
+							<DialogTitle>{selectedCard.name}</DialogTitle>
+						</DialogHeader>
+						<div className='py-4'>
+						<img
+							src={deck.entries[selectedCard.id]?.imageUrl || selectedCard.imageUrl}
+							alt={selectedCard.name}
+							className='w-full aspect-[5/7] object-cover rounded-lg mb-4'
+						/>
+							<CardPrinting
+								deck={deck}
+								card={selectedCard}
+								handleCardDeckPrintingChange={handleDeckCardPrintingChange}
+							/>
+						</div>
+					</DialogContent>
+				</Dialog>
 			)}
 		</>
 	);
