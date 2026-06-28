@@ -145,7 +145,7 @@ export const DeckListView = ({
 			Other: { type: "Other", cards: [] },
 		};
 
-		Object.entries(deck.entries).forEach(([_, entry]) => {
+		Object.values(deck.entries).forEach((entry) => {
 			const cardType = getCardType(entry.type_line);
 			groups[cardType].cards.push(entry);
 		});

@@ -18,7 +18,7 @@ const PlusButton = ({
 	cns,
 	invisibleButtons,
 }: {
-	onClickFn: (args: any) => void;
+	onClickFn: () => void;
 	cns?: string;
 	invisibleButtons?: boolean;
 }) => {
@@ -42,7 +42,7 @@ const MinusButton = ({
 	cns,
 	invisibleButtons,
 }: {
-	onClickFn: (args: any) => void;
+	onClickFn: () => void;
 	cns?: string;
 	invisibleButtons?: boolean;
 }) => {

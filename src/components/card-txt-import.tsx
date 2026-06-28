@@ -73,7 +73,7 @@ const HEADER_PATTERN = /^(deck|sideboard|commander|companion|maindeck|\/\/.*)$/i
 // - MTGA: "4 Lightning Bolt [LEB]"
 // - Simple: "4 Lightning Bolt"
 // - Moxfield: "1 Black Lotus (LEB) 232"
-const CARD_PATTERN = /^(?:(\d+)\s+)?([^\[\(\n]+?)(?:\s*(?:\[([^\]]+)\]|\(([^)]+)\)))?(?:\s+\d+)?$/;
+const CARD_PATTERN = /^(?:(\d+)\s+)?([^[(\n]+?)(?:\s*(?:\[([^\]]+)\]|\(([^)]+)\)))?(?:\s+\d+)?$/;
 
 const parseDeckList = (text: string) => {
 	return text

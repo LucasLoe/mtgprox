@@ -32,6 +32,23 @@ export const useCardPrintings = (cardName: string | undefined, enabled: boolean)
 
 type HandleDeckPrintingChange = (id: string, printingUrl: string) => void;
 
+type CardPrintingOption = {
+	id: string;
+	name: string;
+	set: string;
+	set_name: string;
+	image_uris?: {
+		small?: string;
+		normal?: string;
+	};
+	card_faces?: Array<{
+		image_uris?: {
+			small?: string;
+			normal?: string;
+		};
+	}>;
+};
+
 const CardPrinting = ({
 	deck,
 	card,
@@ -86,24 +103,29 @@ const CardPrinting = ({
 						)}
 					</SelectTrigger>
 					<SelectContent>
-						{printings?.map((printing: any) => (
-							<SelectItem
-								key={printing.id}
-								value={printing.image_uris?.normal || printing.card_faces?.[0].image_uris?.normal}
-								className='flex items-center gap-2 pr-2'
-							>
-								<div className='flex items-center gap-2 flex-nowrap min-w-0'>
-									<img
-										src={printing.image_uris?.small || printing.card_faces?.[0].image_uris?.small}
-										alt={printing.name}
-										className='w-8 h-8 object-cover rounded shrink-0'
-									/>
-									<span className='truncate text-xs'>
-										{printing.set_name} ({printing.set})
-									</span>
-								</div>
-							</SelectItem>
-						))}
+						{printings?.map((printing: CardPrintingOption) => {
+							const normalImage = printing.image_uris?.normal || printing.card_faces?.[0].image_uris?.normal;
+							const smallImage = printing.image_uris?.small || printing.card_faces?.[0].image_uris?.small;
+
+							if (!normalImage) return null;
+
+							return (
+								<SelectItem key={printing.id} value={normalImage} className='flex items-center gap-2 pr-2'>
+									<div className='flex items-center gap-2 flex-nowrap min-w-0'>
+										{smallImage && (
+											<img
+												src={smallImage}
+												alt={printing.name}
+												className='w-8 h-8 object-cover rounded shrink-0'
+											/>
+										)}
+										<span className='truncate text-xs'>
+											{printing.set_name} ({printing.set})
+										</span>
+									</div>
+								</SelectItem>
+							);
+						})}
 					</SelectContent>
 				</Select>
 			</div>
